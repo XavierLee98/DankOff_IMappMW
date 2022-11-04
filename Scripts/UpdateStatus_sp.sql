@@ -1,0 +1,27 @@
+USE [FT_AppMidware]
+GO
+
+/****** Object:  StoredProcedure [dbo].[LoadOPDNDetails_sp]    Script Date: 10/31/2020 12:45:33 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+create PROCEDURE [dbo].UpdateStatus_sp
+(
+	@KEY		UNIQUEIDENTIFIER,
+	@STATUS		NVARCHAR(50),
+	@ERRMSG		NVARCHAR(MAX),
+	@DOCNUM		INT
+)
+AS
+
+UPDATE zmwRequest
+SET [STATUS] = @STATUS, LASTERRORMESSAGE = @ERRMSG, SAPDOCNUMBER = @DOCNUM, COMPLETEDTIME = GETDATE()
+WHERE [GUID] = @KEY
+
+GO
+
+
