@@ -70,13 +70,22 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                     oPickLists = (SAPbobsCOM.PickLists)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oPickLists);
                     oPickLists.GetByKey(int.Parse(dt.Rows[0]["sapDocNumber"].ToString()));
 
-                    string[] sizeStrList = dt.Rows[0]["SizeStr"].ToString().Split(';');
-                    if(sizeStrList != null && sizeStrList.Count() > 0)
-                    {
-                        oPickLists.UserFields.Fields.Item("U_SmallQty").Value = int.Parse(sizeStrList[0]);
-                        oPickLists.UserFields.Fields.Item("U_MediumQty").Value = int.Parse(sizeStrList[1]);
-                        oPickLists.UserFields.Fields.Item("U_LargeQty").Value = int.Parse(sizeStrList[2]);
-                    }
+                    //string[] sizeStrList = dt.Rows[0]["SizeStr"].ToString().Split(';');
+                    //if(sizeStrList != null && sizeStrList.Count() > 0)
+                    //{
+                    //    oPickLists.UserFields.Fields.Item("U_SmallQty").Value = int.Parse(sizeStrList[0]);
+                    //    oPickLists.UserFields.Fields.Item("U_MediumQty").Value = int.Parse(sizeStrList[1]);
+                    //    oPickLists.UserFields.Fields.Item("U_LargeQty").Value = int.Parse(sizeStrList[2]);
+                    //}
+
+                    if (dt.Rows[0]["CartonType"].ToString() != "")
+                        oPickLists.UserFields.Fields.Item("U_CartonSizeType").Value = dt.Rows[0]["CartonType"].ToString();
+                    if (dt.Rows[0]["CartonSize"].ToString() != "")
+                        oPickLists.UserFields.Fields.Item("U_CartonSize").Value = dt.Rows[0]["CartonSize"].ToString();
+                    if (dt.Rows[0]["AirwayBill"].ToString() != "")
+                        oPickLists.UserFields.Fields.Item("U_AirwayBill").Value = dt.Rows[0]["AirwayBill"].ToString();
+                    if (dt.Rows[0]["TotalWeight"].ToString() != "")
+                        oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
 
                     CurrentDocNum = dt.Rows[0]["sapDocNumber"].ToString();
                     oPickLists_Lines = oPickLists.Lines;
