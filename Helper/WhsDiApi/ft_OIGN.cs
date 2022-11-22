@@ -107,59 +107,62 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         if (!sap.oCom.InTransaction)
                             sap.oCom.StartTransaction();
 
-                        oDoc = (SAPbobsCOM.Documents)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryGenEntry);
+                        oDoc = (SAPbobsCOM.Documents)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oDrafts);
+                        oDoc.DocObjectCodeEx = ((int)SAPbobsCOM.BoObjectTypes.oInventoryGenEntry).ToString();
 
                         oDoc.DocDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
                         oDoc.TaxDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
 
+                        if (dt.Rows[i]["series"].ToString() != "")
+                            oDoc.Series = int.Parse(dt.Rows[i]["series"].ToString());
                         if (dt.Rows[i]["ref2"].ToString() != "")
                             oDoc.Reference2 = dt.Rows[i]["ref2"].ToString();
                         if (dt.Rows[i]["comments"].ToString() != "")
                             oDoc.Comments = dt.Rows[i]["comments"].ToString();
                         if (dt.Rows[i]["jrnlmemo"].ToString() != "")
                             oDoc.JournalMemo = dt.Rows[i]["jrnlmemo"].ToString();
-                        //if (dt.Rows[i]["numatcard"].ToString() != "")
-                        //    oDoc.NumAtCard = dt.Rows[i]["numatcard"].ToString();
+                        if (dt.Rows[i]["numatcard"].ToString() != "")
+                            oDoc.NumAtCard = dt.Rows[i]["numatcard"].ToString();
 
 
-                        #region Attachments
-                        dtAttachments = ft_General.LoadDataByGuid("LoadAttachments_sp", dt.Rows[i]["key"].ToString());
+                        //#region Attachments
+                        //dtAttachments = ft_General.LoadDataByGuid("LoadAttachments_sp", dt.Rows[i]["key"].ToString());
 
-                        if (dtAttachments.Rows.Count > 0)
-                        {
-                            oATT = (SAPbobsCOM.Attachments2)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oAttachments2);
-                            for (int x = 0; x < dtAttachments.Rows.Count; x++)
-                            {
-                                string filePath = $"{dtAttachments.Rows[x]["serverSavedPath"].ToString()}";
+                        //if (dtAttachments.Rows.Count > 0)
+                        //{
+                        //    oATT = (SAPbobsCOM.Attachments2)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oAttachments2);
+                        //    for (int x = 0; x < dtAttachments.Rows.Count; x++)
+                        //    {
+                        //        string filePath = $"{dtAttachments.Rows[x]["serverSavedPath"].ToString()}";
 
-                                if (File.Exists(filePath))
-                                {
-                                    oATT.Lines.Add();
-                                    oATT.Lines.FileName = Path.GetFileNameWithoutExtension(filePath);
-                                    oATT.Lines.FileExtension = Path.GetExtension(filePath).Substring(1);
-                                    oATT.Lines.SourcePath = Path.GetDirectoryName(filePath);
-                                    oATT.Lines.Override = SAPbobsCOM.BoYesNoEnum.tYES;
-                                }
-                            }
-                            retcode = oATT.Add();
-                            if (retcode == 0)
-                            {
-                                iAttEntry = int.Parse(sap.oCom.GetNewObjectKey());
-                                //Assign the attachment to the GR object (GR is my SAPbobsCOM.Documents object)
-                            }
-                            else
-                            {
-                                string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
-                                Log($"{key }\n {failed_status }\n { message } \n");
-                                ft_General.UpdateStatus(key, failed_status, message, "");
-                                continue;
-                            }
-                            if (oATT != null) Marshal.ReleaseComObject(oATT);
-                            oATT = null;
-                        }
+                        //        if (File.Exists(filePath))
+                        //        {
+                        //            oATT.Lines.Add();
+                        //            oATT.Lines.FileName = Path.GetFileNameWithoutExtension(filePath);
+                        //            oATT.Lines.FileExtension = Path.GetExtension(filePath).Substring(1);
+                        //            oATT.Lines.SourcePath = Path.GetDirectoryName(filePath);
+                        //            oATT.Lines.Override = SAPbobsCOM.BoYesNoEnum.tYES;
+                        //        }
+                        //    }
+                        //    retcode = oATT.Add();
+                        //    if (retcode == 0)
+                        //    {
+                        //        iAttEntry = int.Parse(sap.oCom.GetNewObjectKey());
+                        //        //Assign the attachment to the GR object (GR is my SAPbobsCOM.Documents object)
+                        //    }
+                        //    else
+                        //    {
+                        //        string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
+                        //        Log($"{key }\n {failed_status }\n { message } \n");
+                        //        ft_General.UpdateStatus(key, failed_status, message, "");
+                        //        continue;
+                        //    }
+                        //    if (oATT != null) Marshal.ReleaseComObject(oATT);
+                        //    oATT = null;
+                        //}
 
-                        if (iAttEntry != -1) oDoc.AttachmentEntry = iAttEntry;
-                        #endregion
+                        //if (iAttEntry != -1) oDoc.AttachmentEntry = iAttEntry;
+                        //#endregion
 
                         details:
                         oDoc.Lines.ItemCode = dt.Rows[i]["itemcode"].ToString();
@@ -200,10 +203,10 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     oDoc.Lines.BatchNumbers.InternalSerialNumber = dr[x]["batchattr2"].ToString();
 
 
-                                    if (dr[x]["batchadmissiondate"].ToString() != "")
-                                        oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["batchadmissiondate"].ToString());
-                                    if (dr[x]["batchexpireddate"].ToString() != "")
-                                        oDoc.Lines.BatchNumbers.ExpiryDate = DateTime.Parse(dr[x]["batchexpireddate"].ToString());
+                                    if (dr[x]["admissiondate"].ToString() != "")
+                                        oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
+                                    if (dr[x]["expireddate"].ToString() != "")
+                                        oDoc.Lines.BatchNumbers.ExpiryDate = DateTime.Parse(dr[x]["expireddate"].ToString());
 
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "'");
@@ -237,6 +240,15 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     oDoc.Lines.SerialNumbers.InternalSerialNumber = dr[x]["serialnumber"].ToString();
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and serialnumber ='" + dr[x]["serialnumber"].ToString() + "'");
+
+
+                                    if (dr[x]["admissiondate"].ToString() != "")
+                                        oDoc.Lines.SerialNumbers.ReceptionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
+                                    if (dr[x]["expireddate"].ToString() != "")
+                                        oDoc.Lines.SerialNumbers.ExpiryDate = DateTime.Parse(dr[x]["expireddate"].ToString());
+                                    if (dr[x]["manufacturingdate"].ToString() != "")
+                                        oDoc.Lines.SerialNumbers.ManufactureDate = DateTime.Parse(dr[x]["manufacturingdate"].ToString());
+
 
                                     if (drBin.Length > 0)
                                     {
@@ -293,14 +305,14 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                     else
                     {
                         sap.oCom.GetNewObjectCode(out docEntry);
-                        docnum = ft_General.GetDocNum(sap.oCom, tablename, docEntry);
+                        //docnum = ft_General.GetDraftDocNum(sap.oCom, docEntry, (int)SAPbobsCOM.BoObjectTypes.oInventoryGenEntry);
 
-                        CurrentDocNum = docnum;
+                        CurrentDocNum = docEntry;
 
                         if (sap.oCom.InTransaction)
                             sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
-                        Log($"{key }\n {success_status }\n  { docnum } \n");
-                        ft_General.UpdateStatus(key, success_status, "", docnum);
+                        Log($"{key }\n {success_status }\n  { docEntry } \n");
+                        ft_General.UpdateStatus(key, success_status, "", docEntry);
                     }
 
                     if (oDoc != null) Marshal.ReleaseComObject(oDoc);
