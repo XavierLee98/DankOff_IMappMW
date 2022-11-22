@@ -209,10 +209,10 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                         oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
                                     }
 
-                                    oDoc.Lines.BatchNumbers.ManufacturerSerialNumber = dr[x]["batchattr1"].ToString();
+                                    //oDoc.Lines.BatchNumbers.ManufacturerSerialNumber = dr[x]["batchattr1"].ToString();
 
-                                    if (dr[x]["batchadmissiondate"].ToString() != "")
-                                        oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["batchadmissiondate"].ToString());
+                                    //if (dr[x]["admissiondate"].ToString() != "")
+                                    //    oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
 
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "' " +
