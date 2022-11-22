@@ -54,7 +54,7 @@
 
   <ItemGroup>
     <Reference Include="SAPBusinessOneSDK">
-      <HintPath>C:\Users\lkx\Desktop\SAPBusinessOneSDK.dll</HintPath>
+      <HintPath>..\..\..\..\Users\Administrator\Desktop\SAPBusinessOneSDK.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
