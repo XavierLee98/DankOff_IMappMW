@@ -64,6 +64,16 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
 
             return docnum;
         }
+        public static string GetDraftDocNum(SAPbobsCOM.Company oCom, string docentry, int objType)
+        {
+            string docnum = "";
+            SAPbobsCOM.Recordset rc = (SAPbobsCOM.Recordset)oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            rc.DoQuery("select * from odrf where ObjType = "+ objType + " and docentry =" + docentry);
+
+            if (rc.RecordCount > 0) docnum = rc.Fields.Item("docnum").Value.ToString();
+
+            return docnum;
+        }
         public static DataTable LoadBinBatchSerial(string key, string itemcode)
         {
             DataTable dt = new DataTable();
