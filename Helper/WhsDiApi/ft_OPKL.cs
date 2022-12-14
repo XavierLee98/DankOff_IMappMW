@@ -5,6 +5,7 @@ using SAPbobsCOM;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -70,22 +71,17 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                     oPickLists = (SAPbobsCOM.PickLists)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oPickLists);
                     oPickLists.GetByKey(int.Parse(dt.Rows[0]["sapDocNumber"].ToString()));
 
-                    //string[] sizeStrList = dt.Rows[0]["SizeStr"].ToString().Split(';');
-                    //if(sizeStrList != null && sizeStrList.Count() > 0)
-                    //{
-                    //    oPickLists.UserFields.Fields.Item("U_SmallQty").Value = int.Parse(sizeStrList[0]);
-                    //    oPickLists.UserFields.Fields.Item("U_MediumQty").Value = int.Parse(sizeStrList[1]);
-                    //    oPickLists.UserFields.Fields.Item("U_LargeQty").Value = int.Parse(sizeStrList[2]);
-                    //}
-
-                    if (dt.Rows[0]["CartonType"].ToString() != "")
-                        oPickLists.UserFields.Fields.Item("U_CartonSizeType").Value = dt.Rows[0]["CartonType"].ToString();
-                    if (dt.Rows[0]["CartonSize"].ToString() != "")
-                        oPickLists.UserFields.Fields.Item("U_CartonSize").Value = dt.Rows[0]["CartonSize"].ToString();
-                    if (dt.Rows[0]["AirwayBill"].ToString() != "")
-                        oPickLists.UserFields.Fields.Item("U_AirwayBill").Value = dt.Rows[0]["AirwayBill"].ToString();
-                    if (dt.Rows[0]["TotalWeight"].ToString() != "")
-                        oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
+                    if (!CheckIsEcommerce(int.Parse(dt.Rows[0]["sapDocNumber"].ToString())))
+                    {
+                        if (dt.Rows[0]["CartonType"].ToString() != "")
+                             oPickLists.UserFields.Fields.Item("U_CartonSizeType").Value = dt.Rows[0]["CartonType"].ToString();
+                         if (dt.Rows[0]["CartonSize"].ToString() != "")
+                             oPickLists.UserFields.Fields.Item("U_CartonSize").Value = dt.Rows[0]["CartonSize"].ToString();
+                         if (dt.Rows[0]["AirwayBill"].ToString() != "")
+                             oPickLists.UserFields.Fields.Item("U_AirwayBill").Value = dt.Rows[0]["AirwayBill"].ToString();
+                         if (dt.Rows[0]["TotalWeight"].ToString() != "")
+                             oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
+                    }
 
                     CurrentDocNum = dt.Rows[0]["sapDocNumber"].ToString();
                     oPickLists_Lines = oPickLists.Lines;
@@ -117,13 +113,11 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                                     PerformBatchTransaction(dr[x], dt.Rows[i]["key"].ToString());
                                     batch_cnt++;
                                 }
-
                                 else if (dr[x]["serialnumber"].ToString() != "")
                                 {
                                     PerformSerialTransaction(dr[x], dt.Rows[i]["key"].ToString(), dt.Rows[i]["itemcode"].ToString());
                                     serial_cnt++;
                                 }
-
                                 else
                                 {
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum ='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
@@ -153,13 +147,13 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
                         Log($"{key }\n {failed_status }\n { message } \n");
                         ft_General.UpdateStatus(key, failed_status, message, CurrentDocNum);
+                        UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
                     }
 
                     if (oPickLists != null) Marshal.ReleaseComObject(oPickLists);
                     oPickLists = null;
 
                 }
-
             }
             catch (Exception ex)
             {
@@ -168,6 +162,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                 Log($"{currentKey }\n {currentStatus }\n { ex.Message } \n");
                 ft_General.UpdateStatus(currentKey, currentStatus, ex.Message, CurrentDocNum);
+                UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
             }
             finally
             {
@@ -186,7 +181,6 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
             dtDetails = ft_General.LoadDataByRequest("LoadDetails_sp", request);
             dtBin = ft_General.LoadDataByRequest("LoadBinDetails_sp", request);
         }
-
 
         static void PerformSerialTransaction(DataRow row, string key, string itemCode)
         {
@@ -422,12 +416,11 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
             }
         }
 
-
         static async Task<UOMConvert> GetUOMUnit(string FromUomCode)
         {
             try
             {
-                var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
+                var conn = new SqlConnection(Program._DbErpConnStr);
                 string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
                                $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
                                $"WHERE T0.UomCode = @UomCode";
@@ -445,6 +438,32 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
         {
             return qty / unit.FromUnit * unit.ToUnit;
         }
+
+        static bool CheckIsEcommerce(int PickNo)
+        {
+            var conn = new SqlConnection(Program._DbErpConnStr);
+            
+            var result = conn.Query<string>("zwa_IMApp_PickList_spCheckIsEcommerceWithPickNo", 
+                new { AbsEntry = PickNo },
+                commandType:CommandType.StoredProcedure)
+                .FirstOrDefault();
+
+            return  result == "Y" ? true : false;
+        }
+
+        static void UpdateIsCompletedPickedToNo(int PickNo)
+        {
+            var conn = new SqlConnection(Program._DbErpConnStr);
+            
+            var result = conn.Query<string>("zwa_IMApp_PickList_spUpdateIsCompletedPickedToNo", 
+                new { AbsEntry = PickNo },
+                commandType: CommandType.StoredProcedure
+                ).FirstOrDefault();
+
+            return;
+        }
+
+
 
     }
 }
