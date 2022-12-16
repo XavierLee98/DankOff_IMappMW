@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using IMAppSapMidware_NetCore.Helper.WhsDiApi;
 using IMAppSapMidware_NetCore.Models.SAPModels;
 using System;
 using System.Data;
@@ -32,6 +33,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
             DataTable dtDetails = null;
             DataTable dtBinFrom = null;
             DataTable dtBinTo = null;
+
             //string sapdb = "SBODEMOUS2";
             string sapdb = Program._ErpDbName;
             string request = "Create Transfer1";
@@ -47,6 +49,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                 string tablename = "OWTR";
                 string docnum = "";
                 string docEntry = "";
+                int baseEntry = -1;
                 int cnt = 0, bin_cnt = 0, batch_cnt = 0, serial_cnt = 0, batchbin_cnt = 0, serialBin_cnt = 0;
                 int retcode = 0;
 
@@ -65,6 +68,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
 
                     //SAPbobsCOM.Recordset rc = (SAPbobsCOM.Recordset)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
                     SAPbobsCOM.StockTransfer oDoc = null;// (SAPbobsCOM.StockTransfer)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oStockTransfer);
+                    SAPbobsCOM.StockTransfer oRequestDoc = (SAPbobsCOM.StockTransfer)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryTransferRequest);
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
@@ -129,10 +133,15 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
                         oDoc.Lines.FromWarehouseCode = dt.Rows[i]["WarehouseFrom"].ToString();
                         oDoc.Lines.WarehouseCode = dt.Rows[i]["WarehouseTo"].ToString();
+                        oDoc.Lines.UserFields.Fields.Item("U_OriginalQty").Value = double.Parse(dt.Rows[i]["TotalOriginalQty"].ToString());
+
+                        //var varianceQty = double.Parse(dt.Rows[i]["quantity"].ToString()) - double.Parse(dt.Rows[i]["TotalActualQty"].ToString());
+                        oDoc.Lines.UserFields.Fields.Item("U_Variance").Value = double.Parse(dt.Rows[i]["VarianceQty"].ToString());
 
 
                         if (int.Parse(dt.Rows[i]["baseentry"].ToString()) > 0)
                         {
+                            baseEntry = int.Parse(dt.Rows[i]["baseentry"].ToString());
                             oDoc.Lines.BaseEntry = int.Parse(dt.Rows[i]["baseentry"].ToString());
                             oDoc.Lines.BaseLine = int.Parse(dt.Rows[i]["baseline"].ToString());
                             oDoc.Lines.BaseType = SAPbobsCOM.InvBaseDocTypeEnum.InventoryTransferRequest;
@@ -285,11 +294,11 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                             oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBinTo[y]["binabs"].ToString());
                                             if (isOtherUOM)
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBinFrom[y]["qty"].ToString()));
+                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBinTo[y]["qty"].ToString()));
                                             }
                                             else
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBinFrom[y]["qty"].ToString());
+                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBinTo[y]["qty"].ToString());
 
                                             }
                                             oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
@@ -323,9 +332,17 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         sap.oCom.GetNewObjectCode(out docEntry);
                         docnum = ft_General.GetDocNum(sap.oCom, tablename, docEntry);
                         
-                        // added by jonny to track error when unexpected error
-                        // 20210411
                         CurrentDocNum = docnum;
+
+                        if (baseEntry != -1)
+                        {
+                            if (!oRequestDoc.GetByKey(baseEntry))
+                            {
+                                LastSAPMsg = sap.oCom.GetLastErrorDescription();
+                                throw new Exception(LastSAPMsg);
+                            }
+                            oRequestDoc.Close();
+                        }
 
                         if (sap.oCom.InTransaction)
                             sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);

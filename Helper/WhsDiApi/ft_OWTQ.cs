@@ -1,4 +1,5 @@
-﻿using IMAppSapMidware_NetCore.Models.SAPModels;
+﻿using IMAppSapMidware_NetCore.Helper.WhsDiApi;
+using IMAppSapMidware_NetCore.Models.SAPModels;
 using System;
 using System.Data;
 using System.Runtime.InteropServices;
