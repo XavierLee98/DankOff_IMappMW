@@ -115,6 +115,8 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         oDoc.DocDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
                         oDoc.TaxDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
 
+                        if (dt.Rows[i]["series"].ToString() != "")
+                            oDoc.Series = int.Parse(dt.Rows[i]["series"].ToString());
                         if (dt.Rows[i]["ref2"].ToString() != "")
                             oDoc.Reference2 = dt.Rows[i]["ref2"].ToString();
                         if (dt.Rows[i]["comments"].ToString() != "")

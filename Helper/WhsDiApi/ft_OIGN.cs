@@ -121,8 +121,8 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                             oDoc.Comments = dt.Rows[i]["comments"].ToString();
                         if (dt.Rows[i]["jrnlmemo"].ToString() != "")
                             oDoc.JournalMemo = dt.Rows[i]["jrnlmemo"].ToString();
-                        if (dt.Rows[i]["numatcard"].ToString() != "")
-                            oDoc.NumAtCard = dt.Rows[i]["numatcard"].ToString();
+                        //if (dt.Rows[i]["numatcard"].ToString() != "")
+                        //    oDoc.NumAtCard = dt.Rows[i]["numatcard"].ToString();
 
 
                         //#region Attachments
