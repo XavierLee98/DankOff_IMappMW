@@ -148,11 +148,31 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         //oDoc.CardCode = dt.Rows[i]["cardcode"].ToString();
                         oDoc.DocDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
                         oDoc.TaxDate = DateTime.Parse(dt.Rows[i]["docdate"].ToString());
-                        oDoc.Comments = dt.Rows[i]["Comments"].ToString();
-                        oDoc.JournalMemo = dt.Rows[i]["JrnlMemo"].ToString();
-                    //oDoc.FromWarehouse = dt.Rows[i]["fromwarehouse"].ToString();
 
-                    details:
+                        //if (!string.IsNullOrEmpty(dt.Rows[i]["Series"].ToString()))
+                        //    oDoc.Series = int.Parse(dt.Rows[i]["Series"].ToString());
+
+                        //if (!string.IsNullOrEmpty(dt.Rows[i]["Comments"].ToString()))
+                        //     oDoc.Comments = dt.Rows[i]["Comments"].ToString();
+
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["JrnlMemo"].ToString()))
+                             oDoc.JournalMemo = dt.Rows[i]["JrnlMemo"].ToString();
+
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["TransferOutUser"].ToString()))
+                            oDoc.UserFields.Fields.Item("U_TransferOutUser").Value = dt.Rows[i]["TransferOutUser"].ToString();
+
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["TransferInUser"].ToString()))
+                            oDoc.UserFields.Fields.Item("U_TransferInUser").Value = dt.Rows[i]["TransferInUser"].ToString();
+
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["TransferOutDate"].ToString()))
+                            oDoc.UserFields.Fields.Item("U_TransferOutDate").Value = DateTime.Parse(dt.Rows[i]["TransferOutDate"].ToString());
+
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["TransferInDate"].ToString()))
+                            oDoc.UserFields.Fields.Item("U_TransferInDate").Value = DateTime.Parse(dt.Rows[i]["TransferInDate"].ToString());
+
+                        //oDoc.FromWarehouse = dt.Rows[i]["fromwarehouse"].ToString();
+
+                        details:
                         isOtherUOM = false;
                         unit = null;
                         oDoc.Lines.ItemCode = dt.Rows[i]["itemcode"].ToString();
@@ -312,7 +332,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                             else
                                             {
                                                 oDoc.Lines.BinAllocations.Quantity = double.Parse(drBinFrom[y]["qty"].ToString());
-
                                             }
                                             oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
                                             bin_cnt++;
