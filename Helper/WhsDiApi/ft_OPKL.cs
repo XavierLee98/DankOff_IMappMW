@@ -83,6 +83,10 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                              oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
                     }
 
+                    var result = dt.Rows[0]["IsCompletePick"].ToString();
+                    if (dt.Rows[0]["IsCompletePick"].ToString() != "" && bool.Parse(dt.Rows[0]["IsCompletePick"].ToString()))
+                        oPickLists.UserFields.Fields.Item("U_IsCompletePicked").Value = "Y";
+
                     CurrentDocNum = dt.Rows[0]["sapDocNumber"].ToString();
                     oPickLists_Lines = oPickLists.Lines;
 
@@ -147,7 +151,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
                         Log($"{key }\n {failed_status }\n { message } \n");
                         ft_General.UpdateStatus(key, failed_status, message, CurrentDocNum);
-                        UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
+                        //UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
                     }
 
                     if (oPickLists != null) Marshal.ReleaseComObject(oPickLists);
@@ -162,7 +166,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                 Log($"{currentKey }\n {currentStatus }\n { ex.Message } \n");
                 ft_General.UpdateStatus(currentKey, currentStatus, ex.Message, CurrentDocNum);
-                UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
+                //UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
             }
             finally
             {
