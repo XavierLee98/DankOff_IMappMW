@@ -75,17 +75,22 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                     {
                         if (dt.Rows[0]["CartonType"].ToString() != "")
                              oPickLists.UserFields.Fields.Item("U_CartonSizeType").Value = dt.Rows[0]["CartonType"].ToString();
-                         if (dt.Rows[0]["CartonSize"].ToString() != "")
-                             oPickLists.UserFields.Fields.Item("U_CartonSize").Value = dt.Rows[0]["CartonSize"].ToString();
-                         if (dt.Rows[0]["AirwayBill"].ToString() != "")
-                             oPickLists.UserFields.Fields.Item("U_AirwayBill").Value = dt.Rows[0]["AirwayBill"].ToString();
-                         if (dt.Rows[0]["TotalWeight"].ToString() != "")
-                             oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
+                        if (dt.Rows[0]["CartonSize"].ToString() != "")
+                            oPickLists.UserFields.Fields.Item("U_CartonSize").Value = dt.Rows[0]["CartonSize"].ToString();
+                        if (dt.Rows[0]["AirwayBill"].ToString() != "")
+                            oPickLists.UserFields.Fields.Item("U_AirwayBill").Value = dt.Rows[0]["AirwayBill"].ToString();
+                        if (dt.Rows[0]["TotalWeight"].ToString() != "")
+                            oPickLists.UserFields.Fields.Item("U_TotalWeight").Value = double.Parse(dt.Rows[0]["TotalWeight"].ToString());
+
+                        oPickLists.UserFields.Fields.Item("U_PickDate").Value = DateTime.Now;
                     }
 
                     var result = dt.Rows[0]["IsCompletePick"].ToString();
                     if (dt.Rows[0]["IsCompletePick"].ToString() != "" && bool.Parse(dt.Rows[0]["IsCompletePick"].ToString()))
+                    {
                         oPickLists.UserFields.Fields.Item("U_IsCompletePicked").Value = "Y";
+                        oPickLists.UserFields.Fields.Item("U_PickDate").Value = DateTime.Now;
+                    }
 
                     CurrentDocNum = dt.Rows[0]["sapDocNumber"].ToString();
                     oPickLists_Lines = oPickLists.Lines;
