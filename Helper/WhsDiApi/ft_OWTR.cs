@@ -187,10 +187,10 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
                         oDoc.Lines.FromWarehouseCode = dt.Rows[i]["WarehouseFrom"].ToString();
                         oDoc.Lines.WarehouseCode = dt.Rows[i]["WarehouseTo"].ToString();
-                        oDoc.Lines.UserFields.Fields.Item("U_OriginalQty").Value = double.Parse(dt.Rows[i]["TotalOriginalQty"].ToString());
+                        //oDoc.Lines.UserFields.Fields.Item("U_OriginalQty").Value = double.Parse(dt.Rows[i]["TotalOriginalQty"].ToString());
 
                         //var varianceQty = double.Parse(dt.Rows[i]["quantity"].ToString()) - double.Parse(dt.Rows[i]["TotalActualQty"].ToString());
-                        oDoc.Lines.UserFields.Fields.Item("U_Variance").Value = double.Parse(dt.Rows[i]["VarianceQty"].ToString());
+                        //oDoc.Lines.UserFields.Fields.Item("U_Variance").Value = double.Parse(dt.Rows[i]["VarianceQty"].ToString());
 
 
                         if (int.Parse(dt.Rows[i]["baseentry"].ToString()) > 0)
@@ -390,38 +390,41 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         
                         CurrentDocNum = docnum;
 
-                        if (baseEntry != -1)
-                        {
-                            oRequestDoc = (SAPbobsCOM.StockTransfer)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryTransferRequest);
-                            if (!oRequestDoc.GetByKey(baseEntry))
-                            {
-                                LastSAPMsg = sap.oCom.GetLastErrorDescription();
-                                throw new Exception(LastSAPMsg);
-                            }
+                        //if (baseEntry != -1)
+                        //{
+                        //    oRequestDoc = (SAPbobsCOM.StockTransfer)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryTransferRequest);
+                        //    if (!oRequestDoc.GetByKey(baseEntry))
+                        //    {
+                        //        LastSAPMsg = sap.oCom.GetLastErrorDescription();
+                        //        throw new Exception(LastSAPMsg);
+                        //    }
 
-                            if (oRequestDoc.DocumentStatus == SAPbobsCOM.BoStatus.bost_Open)
-                                retcode = oRequestDoc.Close();
+                        //    if (oRequestDoc.DocumentStatus == SAPbobsCOM.BoStatus.bost_Open)
+                        //        retcode = oRequestDoc.Close();
 
-                            if (retcode != 0)
-                            {
-                                if (sap.oCom.InTransaction)
-                                    sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_RollBack);
-                                string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
-                                Log($"{key }\n {failed_status }\n { message } \n");
-                                ft_General.UpdateStatus(key, failed_status, message, "");
-                                return;
-                            }
-                            else
-                            {
-                                if (sap.oCom.InTransaction)
-                                    sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
-                            }
-                        }
-                        else
-                        {
-                            if (sap.oCom.InTransaction)
-                                sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
-                        }
+                        //    if (retcode != 0)
+                        //    {
+                        //        if (sap.oCom.InTransaction)
+                        //            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_RollBack);
+                        //        string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
+                        //        Log($"{key }\n {failed_status }\n { message } \n");
+                        //        ft_General.UpdateStatus(key, failed_status, message, "");
+                        //        return;
+                        //    }
+                        //    else
+                        //    {
+                        //        if (sap.oCom.InTransaction)
+                        //            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    if (sap.oCom.InTransaction)
+                        //        sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
+                        //}
+
+                        if (sap.oCom.InTransaction)
+                            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
 
                         Log($" {key }\n {success_status }\n  { docnum } \n");
                         ft_General.UpdateStatus(key, success_status, "", docnum);
