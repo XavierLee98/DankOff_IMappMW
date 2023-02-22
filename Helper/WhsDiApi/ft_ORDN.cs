@@ -166,7 +166,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                 oDoc.Lines.WarehouseCode = dt.Rows[i]["whscode"].ToString();
                         }
 
-                        DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
+                        DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and LineGuid='" + dt.Rows[i]["LineGuid"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
                                          " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
                         if (dr.Length > 0)
                         {
@@ -195,7 +195,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     //if (dr[x]["batchexpireddate"].ToString() != "")
                                     //    oDoc.Lines.BatchNumbers.ExpiryDate = DateTime.Parse(dr[x]["batchexpireddate"].ToString());
 
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
+                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and LineGuid='" + dt.Rows[i]["LineGuid"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "' " +
                                          " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
 
@@ -228,7 +228,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     if (serial_cnt > 0) oDoc.Lines.SerialNumbers.Add();
                                     oDoc.Lines.SerialNumbers.SetCurrentLine(serial_cnt);
                                     oDoc.Lines.SerialNumbers.InternalSerialNumber = dr[x]["serialnumber"].ToString();
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
+                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and LineGuid='" + dt.Rows[i]["LineGuid"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and serialnumber ='" + dr[x]["serialnumber"].ToString() + "' " +
                                          " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
 
@@ -245,7 +245,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                 }
                                 else
                                 {
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
+                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and LineGuid='" + dt.Rows[i]["LineGuid"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
                                          " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
 
                                     if (drBin.Length > 0)
