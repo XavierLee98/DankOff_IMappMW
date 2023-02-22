@@ -164,6 +164,20 @@ namespace IMAppSapMidware_NetCore.Helper
                                 }
                                 break;
                             }
+                        case "Create DF Transfer":
+                            {
+                                try
+                                {
+                                    //Create Transfer1
+                                    ft_OWTR_DF.Post(); // not item detals line to put remarks // 20210403
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log($"{ ex.Message } \n");
+                                    ft_General.UpdateError("OWTR", ex.Message);
+                                }
+                                break;
+                            }
                         //case "Update Inventry Count":
                         //    {
                         //        try
