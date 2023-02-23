@@ -77,6 +77,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                         if (cnt > 0)
                         {
+
                             oDoc.Lines.Add();
                             oDoc.Lines.SetCurrentLine(cnt);
 
@@ -172,6 +173,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
 
                         details:
+
                         isOtherUOM = false;
                         unit = null;
                         oDoc.Lines.ItemCode = dt.Rows[i]["itemcode"].ToString();
@@ -228,45 +230,51 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                                     {
                                         for (int y = 0; y < drBin.Length; y++)
                                         {
-                                            if (drBin[y]["FromBinAbs"].ToString() == "-1") continue;
-                                            if (batchbin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(batchbin_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["FromBinAbs"].ToString());
-
-                                            if (isOtherUOM)
+                                            if (drBin[y]["FromBinAbs"].ToString() != "-1")
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
-                                            }
-                                            else
-                                            {
-                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
+                                                if (batchbin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(batchbin_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["FromBinAbs"].ToString());
+
+                                                if (isOtherUOM)
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                }
+                                                else
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
+                                                }
+
+                                                oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = batch_cnt;
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
+                                                batchbin_cnt++;
                                             }
 
-                                            oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = batch_cnt;
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
-                                            batchbin_cnt++;
-                                        }
-
-                                        for (int y = 0; y < drBin.Length; y++)
-                                        {
-                                            if (drBin[y]["ToBinAbs"].ToString() == "-1") continue;
-                                            if (batchbin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(batchbin_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["ToBinAbs"].ToString());
-
-                                            if (isOtherUOM)
+                                            if (drBin[y]["ToBinAbs"].ToString() != "-1")
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                if (batchbin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(batchbin_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["ToBinAbs"].ToString());
+
+                                                if (isOtherUOM)
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                }
+                                                else
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
+                                                }
+                                                oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = batch_cnt;
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
+                                                batchbin_cnt++;
                                             }
-                                            else
-                                            {
-                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
-                                            }
-                                            oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = batch_cnt;
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
-                                            batchbin_cnt++;
                                         }
                                         batch_cnt++;
+                                        //for (int y = 0; y < drBin.Length; y++)
+                                        //{
+                                        //    if (drBin[y]["ToBinAbs"].ToString() == "-1") continue;
+
+                                        //}
                                     }
                                 }
                                 else if (dr[x]["serialnumber"].ToString() != "")
@@ -279,27 +287,31 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                                     if (drBin.Length > 0)
                                     {
-                                        if (drBin[0]["FromBinAbs"].ToString() == "-1")
+                                        for (int y = 0; y < drBin.Length; y++)
                                         {
-                                            if (serialBin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(serial_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[0]["FromBinAbs"].ToString());
-                                            oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[0]["qty"].ToString());
-                                            oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = serial_cnt;
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
-                                            serialBin_cnt++;
-                                        }
+                                            if (drBin[y]["FromBinAbs"].ToString() != "-1")
+                                            {
+                                                if (serialBin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(serial_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[0]["FromBinAbs"].ToString());
+                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[0]["qty"].ToString());
+                                                oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = serial_cnt;
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
+                                                serialBin_cnt++;
+                                            }
 
-                                        if (drBin[0]["ToBinAbs"].ToString() == "-1")
-                                        {
-                                            if (serialBin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(serial_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[0]["ToBinAbs"].ToString());
-                                            oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[0]["qty"].ToString());
-                                            oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = serial_cnt;
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
-                                            serialBin_cnt++;
+                                            if (drBin[y]["ToBinAbs"].ToString() != "-1")
+                                            {
+                                                if (serialBin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(serial_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[0]["ToBinAbs"].ToString());
+                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[0]["qty"].ToString());
+                                                oDoc.Lines.BinAllocations.SerialAndBatchNumbersBaseLine = serial_cnt;
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
+                                                serialBin_cnt++;
+                                            }
                                         }
+                                        serial_cnt++;
                                     }
                                 }
                                 else
@@ -310,39 +322,40 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                                     {
                                         for (int y = 0; y < drBin.Length; y++)
                                         {
-                                            if (drBin[y]["FromBinAbs"].ToString() == "-1") continue;
-                                            if (bin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(bin_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["FromBinAbs"].ToString());
-                                            if (isOtherUOM)
+                                            if (drBin[y]["FromBinAbs"].ToString() != "-1")
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                if (bin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(bin_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["FromBinAbs"].ToString());
+                                                if (isOtherUOM)
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                }
+                                                else
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
+                                                }
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
+                                                bin_cnt++;
                                             }
-                                            else
-                                            {
-                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
-                                            }
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batFromWarehouse;
-                                            bin_cnt++;
-                                        }
 
-                                        for (int y = 0; y < drBin.Length; y++)
-                                        {
-                                            if (drBin[y]["ToBinAbs"].ToString() == "-1") continue;
-                                            if (bin_cnt > 0) oDoc.Lines.BinAllocations.Add();
-                                            //oDoc.Lines.BinAllocations.SetCurrentLine(bin_cnt);
-                                            oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["ToBinAbs"].ToString());
-                                            if (isOtherUOM)
+                                            if (drBin[y]["ToBinAbs"].ToString() != "-1")
                                             {
-                                                oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
-                                            }
-                                            else
-                                            {
-                                                oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
+                                                if (bin_cnt > 0) oDoc.Lines.BinAllocations.Add();
+                                                //oDoc.Lines.BinAllocations.SetCurrentLine(bin_cnt);
+                                                oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["ToBinAbs"].ToString());
+                                                if (isOtherUOM)
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = ConvertUOMQuantity(double.Parse(drBin[y]["qty"].ToString()));
+                                                }
+                                                else
+                                                {
+                                                    oDoc.Lines.BinAllocations.Quantity = double.Parse(drBin[y]["qty"].ToString());
 
+                                                }
+                                                oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
+                                                bin_cnt++;
                                             }
-                                            oDoc.Lines.BinAllocations.BinActionType = SAPbobsCOM.BinActionTypeEnum.batToWarehouse;
-                                            bin_cnt++;
                                         }
                                     }
                                 }
@@ -372,39 +385,6 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         docnum = ft_General.GetDocNum(sap.oCom, tablename, docEntry);
 
                         CurrentDocNum = docnum;
-
-                        //if (baseEntry != -1)
-                        //{
-                        //    oRequestDoc = (SAPbobsCOM.StockTransfer)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryTransferRequest);
-                        //    if (!oRequestDoc.GetByKey(baseEntry))
-                        //    {
-                        //        LastSAPMsg = sap.oCom.GetLastErrorDescription();
-                        //        throw new Exception(LastSAPMsg);
-                        //    }
-
-                        //    if (oRequestDoc.DocumentStatus == SAPbobsCOM.BoStatus.bost_Open)
-                        //        retcode = oRequestDoc.Close();
-
-                        //    if (retcode != 0)
-                        //    {
-                        //        if (sap.oCom.InTransaction)
-                        //            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_RollBack);
-                        //        string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
-                        //        Log($"{key }\n {failed_status }\n { message } \n");
-                        //        ft_General.UpdateStatus(key, failed_status, message, "");
-                        //        return;
-                        //    }
-                        //    else
-                        //    {
-                        //        if (sap.oCom.InTransaction)
-                        //            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
-                        //    }
-                        //}
-                        //else
-                        //{
-                        //    if (sap.oCom.InTransaction)
-                        //        sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
-                        //}
 
                         if (sap.oCom.InTransaction)
                             sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
