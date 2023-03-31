@@ -188,6 +188,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
                         oDoc.Lines.FromWarehouseCode = fromWhsCode;
                         oDoc.Lines.WarehouseCode = toWhsCode;
+                        oDoc.Lines.UserFields.Fields.Item("U_LineGuid").Value = dt.Rows[i]["LineGuid"].ToString();
                         //oDoc.Lines.UserFields.Fields.Item("U_OriginalQty").Value = double.Parse(dt.Rows[i]["TotalOriginalQty"].ToString());
 
                         //var varianceQty = double.Parse(dt.Rows[i]["quantity"].ToString()) - double.Parse(dt.Rows[i]["TotalActualQty"].ToString());
@@ -391,6 +392,8 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                         Log($" {key }\n {success_status }\n  { docnum } \n");
                         ft_General.UpdateStatus(key, success_status, "", docnum);
+
+                        UpdateStatus(currentKey, Int32.Parse(CurrentDocNum));
                     }
 
                     if (oDoc != null) Marshal.ReleaseComObject(oDoc);
@@ -411,6 +414,20 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                 dt = null;
                 dtDetails = null;
                 dtBin = null;
+            }
+        }
+
+        static void UpdateStatus(string guid, int sapDocno)
+        {
+            try
+            {
+                var conn = new System.Data.SqlClient.SqlConnection(Program._DbMidwareConnStr);
+
+                var result = conn.Execute("sp_Transfer_UpdatePosted", new { Guid = guid, SapDocNum = sapDocno }, commandType:CommandType.StoredProcedure);
+            }
+            catch (Exception e)
+            {
+                LastSAPMsg = e.ToString();
             }
         }
 
