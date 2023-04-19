@@ -13,17 +13,12 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
     {
         public static string LastSAPMsg { get; set; } = string.Empty;
 
-
-        // added by jonny to track error when unexpected error
-        // 20210411
         static string currentKey = string.Empty;
         static string currentStatus = string.Empty;
         static string CurrentDocNum = string.Empty;
         static bool isOtherUOM = false;
         static UOMConvert unit = null;
 
-        //added by KX
-        //20200412
         public static string Erp_DBConnStr { get; set; } = string.Empty;
 
 
@@ -66,14 +61,13 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                     }
 
                     string key = dt.Rows[0]["key"].ToString();
-                    // added by jonny to track error when unexpected error
-                    // 20210411
+
                     currentKey = key;
                     currentStatus = failed_status;
 
 
                     SAPbobsCOM.Recordset rc = (SAPbobsCOM.Recordset)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-                    SAPbobsCOM.Documents oDoc = null;// (SAPbobsCOM.Documents)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oPurchaseDeliveryNotes);
+                    SAPbobsCOM.Documents oDoc = null;
 
                     for (int i = 0; i < dt.Rows.Count; i++)
                     {
@@ -131,15 +125,11 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         var itemcode = dt.Rows[i]["itemcode"].ToString();
 
                         oDoc.Lines.ItemCode = dt.Rows[i]["itemcode"].ToString();
-                        if(dt.Rows[i]["BaseEntry"].ToString() == "-1")
-                        {
-                            oDoc.Lines.UoMEntry = int.Parse(dt.Rows[i]["UomEntry"].ToString());
-                        }
 
                         if (int.Parse(dt.Rows[i]["UomEntry"].ToString()) != -1)
                         {
                             isOtherUOM = true;
-                            unit = GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
+                            unit = GetUOMUnit(dt.Rows[i]["itemcode"].ToString(), dt.Rows[i]["UomCode"].ToString());
                             if (unit == null) throw new Exception("UOM Unit is null.");
                         }
 
@@ -175,31 +165,20 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                 oDoc.Lines.WarehouseCode = dt.Rows[i]["whscode"].ToString();
                         }
 
-                        //DataTable dtDetails = ft_General.LoadBinBatchSerial(dt.Rows[i]["key"].ToString(), dt.Rows[i]["itemcode"].ToString());
                         DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
-                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
+                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'" +
+                                         " and LineGuid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
                         if (dr.Length > 0)
                         {
                             for (int x = 0; x < dr.Length; x++)
                             {
                                 if (dr[x]["batchnumber"].ToString() != "")
                                 {
-                                    // added by KX
-                                    // 20210412
-                                    //var numinsale = GetNumInBuy(itemcode);
-                                    //if (numinsale == -1)
-                                    //{
-                                    //    oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
-                                    //}
-
-
                                     if (batch_cnt > 0) oDoc.Lines.BatchNumbers.Add();
                                     oDoc.Lines.BatchNumbers.SetCurrentLine(batch_cnt);
                                     oDoc.Lines.BatchNumbers.BatchNumber = dr[x]["batchnumber"].ToString();
-                                    //oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
-                                    // added by KX
-                                    // 20210412
-                                    //oDoc.Lines.BatchNumbers.Quantity = oDoc.Lines.Quantity * numinsale;
+
                                     if (isOtherUOM)
                                     {
                                         oDoc.Lines.BatchNumbers.Quantity = ConvertUOMQuantity(double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString()));
@@ -209,14 +188,11 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                         oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
                                     }
 
-                                    //oDoc.Lines.BatchNumbers.ManufacturerSerialNumber = dr[x]["batchattr1"].ToString();
-
-                                    //if (dr[x]["admissiondate"].ToString() != "")
-                                    //    oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
-
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "' " +
-                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
+                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
 
                                     if (drBin.Length > 0)
                                     {
@@ -246,9 +222,12 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     if (serial_cnt > 0) oDoc.Lines.SerialNumbers.Add();
                                     oDoc.Lines.SerialNumbers.SetCurrentLine(serial_cnt);
                                     oDoc.Lines.SerialNumbers.InternalSerialNumber = dr[x]["serialnumber"].ToString();
+
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and serialnumber ='" + dr[x]["serialnumber"].ToString() + "' " +
-                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
+                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
 
                                     if (drBin.Length > 0)
                                     {
@@ -264,7 +243,8 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                 else
                                 {
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "' " +
-                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'");
+                                         " and baseentry=" + dt.Rows[i]["baseentry"].ToString() + " and basetype ='" + dt.Rows[i]["basetype"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
 
                                     if (drBin.Length > 0)
                                     {
@@ -311,8 +291,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                     {
                         sap.oCom.GetNewObjectCode(out docEntry);
                         docnum = ft_General.GetDocNum(sap.oCom, tablename, docEntry);
-                        // added by jonny to track error when unexpected error
-                        // 20210411
+
                         CurrentDocNum = docnum;
 
                         if (sap.oCom.InTransaction)
@@ -330,9 +309,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                 Log($"{ ex.Message } \n");
                 ft_General.UpdateError("ORPD", ex.Message);
 
-
-                // added by jonny to track error when unexpected error
-                // 20210411
                 Log($"{currentKey }\n {currentStatus }\n { ex.Message } \n");
                 ft_General.UpdateStatus(currentKey, currentStatus, ex.Message, CurrentDocNum);
             }
@@ -344,16 +320,15 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
             }
         }
 
-        static UOMConvert GetUOMUnit(string FromUomCode)
+        static UOMConvert GetUOMUnit(string itemcode, string FromUomCode)
         {
             try
             {
                 var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
 
-                return conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                return conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode }).FirstOrDefault();
+
             }
             catch (Exception e)
             {
@@ -367,19 +342,5 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
             return qty / unit.FromUnit * unit.ToUnit;
         }
 
-        // added by KX
-        // 20210412
-        static double GetNumInBuy(string @ItemCode)
-        {
-            Erp_DBConnStr = Program._DbErpConnStr;
-            var parameter = new { ItemCode };
-
-            var query = "Select NumInBuy from OITM where ItemCode = @ItemCode";
-            // sql to query the OITM table to get the num in sale
-            using (var conn = new SqlConnection(Erp_DBConnStr))
-            {
-                return conn.QuerySingle<double>(query, parameter);
-            }
-        }
     }
 }

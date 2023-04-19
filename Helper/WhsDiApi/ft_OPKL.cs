@@ -48,6 +48,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                 string success_status = "SUCCESS";
                 int cnt = 0, bin_cnt = 0, batch_cnt = 0, serial_cnt = 0, batchbin_cnt = 0;
                 int retcode = 0;
+                bool isLineFound = false;
 
                 LoadDataToDataTable(request);
 
@@ -99,69 +100,94 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                     {
                         isOtherUOM = false;
                         unit = null;
-                        oPickLists_Lines.SetCurrentLine(int.Parse(dt.Rows[i]["SourceLineNum"].ToString()));
-                        if(dt.Rows[i]["UomCode"].ToString() != "Manual")
+                        isLineFound = false;
+
+                        for (int j = 0; j < oPickLists_Lines.Count; j++)
                         {
-                            isOtherUOM = true;
-                            unit = await GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
-                            if (unit == null) throw new Exception("UOM Unit is null.");
+                            oPickLists_Lines.SetCurrentLine(j);
 
-                            oPickLists_Lines.PickedQuantity = ConvertUOMQuantity(double.Parse(dt.Rows[i]["quantity"].ToString()));
-                        }
-                        else
-                            oPickLists_Lines.PickedQuantity = double.Parse(dt.Rows[i]["quantity"].ToString());
-
-                        DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
-
-                        if (dr.Length > 0)
-                        {
-                            for (int x = 0; x < dr.Length; x++)
+                            if (int.Parse(dt.Rows[i]["SourceLineNum"].ToString()) == oPickLists_Lines.LineNumber)
                             {
-                                if (dr[x]["batchnumber"].ToString() != "")
+                                isLineFound = true;
+                                break;
+                            }
+                        }
+
+                        if (isLineFound)
+                        {
+                            //if (oPickLists_Lines.LineNumber != 2) continue;
+
+                            if (dt.Rows[i]["UomCode"].ToString() != "Manual")
+                            {
+                                isOtherUOM = true;
+                                unit = await GetUOMUnit(dt.Rows[i]["ItemCode"].ToString(), dt.Rows[i]["UomCode"].ToString());
+                                if (unit == null) throw new Exception("UOM Unit is null.");
+
+                                oPickLists_Lines.PickedQuantity = ConvertUOMQuantity(double.Parse(dt.Rows[i]["quantity"].ToString()));
+                            }
+                            else
+                            {
+                                oPickLists_Lines.PickedQuantity = double.Parse(dt.Rows[i]["quantity"].ToString());
+                            }
+
+                            //DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
+
+                            DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
+                            if (dr.Length > 0)
+                            {
+                                for (int x = 0; x < dr.Length; x++)
                                 {
-                                    PerformBatchTransaction(dr[x], dt.Rows[i]["key"].ToString());
-                                    batch_cnt++;
-                                }
-                                else if (dr[x]["serialnumber"].ToString() != "")
-                                {
-                                    PerformSerialTransaction(dr[x], dt.Rows[i]["key"].ToString(), dt.Rows[i]["itemcode"].ToString());
-                                    serial_cnt++;
-                                }
-                                else
-                                {
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum ='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
-                                    if (drBin.Length > 0)
+                                    if (dr[x]["batchnumber"].ToString() != "")
                                     {
-                                        PerformNormalItemTransaction(drBin);
+                                        PerformBatchTransaction(dr[x], dt.Rows[i]["key"].ToString());
+                                        batch_cnt++;
+                                    }
+                                    else if (dr[x]["serialnumber"].ToString() != "")
+                                    {
+                                        PerformSerialTransaction(dr[x], dt.Rows[i]["key"].ToString(), dt.Rows[i]["itemcode"].ToString());
+                                        serial_cnt++;
+                                    }
+                                    else
+                                    {
+                                        //DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum ='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
+                                        DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and SourceLineNum ='" + dt.Rows[i]["SourceLineNum"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
+                                        if (drBin.Length > 0)
+                                        {
+                                            PerformNormalItemTransaction(drBin);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    retcode = oPickLists.Update();
 
-                    if (retcode == 0)
-                    {
-                        if (sap.oCom.InTransaction)
-                            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
+                        retcode = oPickLists.Update();
 
-                        Log($"{key }\n {success_status }\n  { CurrentDocNum } \n");
-                        ft_General.UpdateStatus(key, success_status, "", CurrentDocNum);
-                    }
-                    else
-                    {
-                        if (sap.oCom.InTransaction)
-                            sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_RollBack);
-                        string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
-                        Log($"{key }\n {failed_status }\n { message } \n");
-                        ft_General.UpdateStatus(key, failed_status, message, CurrentDocNum);
-                        //UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
-                    }
+                        if (retcode == 0)
+                        {
+                            if (sap.oCom.InTransaction)
+                                sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_Commit);
 
-                    if (oPickLists != null) Marshal.ReleaseComObject(oPickLists);
-                    oPickLists = null;
+                            Log($"{key}\n {success_status}\n  {CurrentDocNum} \n");
+                            ft_General.UpdateStatus(key, success_status, "", CurrentDocNum);
+                        }
+                        else
+                        {
+                            if (sap.oCom.InTransaction)
+                                sap.oCom.EndTransaction(SAPbobsCOM.BoWfTransOpt.wf_RollBack);
+                            string message = sap.oCom.GetLastErrorDescription().ToString().Replace("'", "");
+                            Log($"{key}\n {failed_status}\n {message} \n");
+                            ft_General.UpdateStatus(key, failed_status, message, CurrentDocNum);
+                            UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
+                        }
 
+                        if (oPickLists != null) Marshal.ReleaseComObject(oPickLists);
+                        oPickLists = null;
                 }
             }
             catch (Exception ex)
@@ -171,7 +197,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
                 Log($"{currentKey }\n {currentStatus }\n { ex.Message } \n");
                 ft_General.UpdateStatus(currentKey, currentStatus, ex.Message, CurrentDocNum);
-                //UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
+                UpdateIsCompletedPickedToNo(int.Parse(CurrentDocNum));
             }
             finally
             {
@@ -425,16 +451,15 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
             }
         }
 
-        static async Task<UOMConvert> GetUOMUnit(string FromUomCode)
+        static async Task<UOMConvert> GetUOMUnit(string itemcode, string FromUomCode)
         {
             try
             {
-                var conn = new SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
+                var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
 
-                return  conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                return conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode }).FirstOrDefault();
+
             }
             catch (Exception e)
             {
@@ -471,9 +496,6 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
 
             return;
         }
-
-
-
     }
 }
 

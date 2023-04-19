@@ -124,14 +124,10 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         var itemcode = dt.Rows[i]["itemcode"].ToString();
                         oDoc.Lines.ItemCode = dt.Rows[i]["itemcode"].ToString();
 
-                        if (dt.Rows[i]["BaseEntry"].ToString() == "-1")
-                        {
-                            oDoc.Lines.UoMEntry = int.Parse(dt.Rows[i]["UomEntry"].ToString());
-                        }
                         if (int.Parse(dt.Rows[i]["UomEntry"].ToString()) != -1)
                         {
                             isOtherUOM = true;
-                            unit = GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
+                            unit = GetUOMUnit(dt.Rows[i]["itemcode"].ToString(), dt.Rows[i]["UomCode"].ToString());
                             if (unit == null) throw new Exception("UOM Unit is null.");
                         }
 
@@ -187,13 +183,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                         oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
                                     }
 
-                                    //oDoc.Lines.BatchNumbers.ManufacturerSerialNumber = dr[x]["batchattr1"].ToString();
-                                    //oDoc.Lines.BatchNumbers.InternalSerialNumber = dr[x]["batchattr2"].ToString();
-
-                                    //if (dr[x]["batchadmissiondate"].ToString() != "")
-                                    //    oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["batchadmissiondate"].ToString());
-                                    //if (dr[x]["batchexpireddate"].ToString() != "")
-                                    //    oDoc.Lines.BatchNumbers.ExpiryDate = DateTime.Parse(dr[x]["batchexpireddate"].ToString());
 
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and LineGuid='" + dt.Rows[i]["LineGuid"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "' " +
@@ -321,16 +310,15 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
             }
         }
 
-        static UOMConvert GetUOMUnit(string FromUomCode)
+        static UOMConvert GetUOMUnit(string itemcode, string FromUomCode)
         {
             try
             {
                 var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
 
-                return conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                return conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode }).FirstOrDefault();
+
             }
             catch (Exception e)
             {
@@ -342,20 +330,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
         static double ConvertUOMQuantity(double qty)
         {
             return qty / unit.FromUnit * unit.ToUnit;
-        }
-        // added by KX
-        // 20210412
-        static double GetNumInBuy(string @ItemCode)
-        {
-            Erp_DBConnStr = Program._DbErpConnStr;
-            var parameter = new { ItemCode };
-
-            var query = "Select NumInBuy from OITM where ItemCode = @ItemCode";
-            // sql to query the OITM table to get the num in buy
-            using (var conn = new SqlConnection(Erp_DBConnStr))
-            {
-                return conn.QuerySingle<double>(query, parameter);
-            }
         }
     }
 }

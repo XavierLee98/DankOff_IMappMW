@@ -138,20 +138,9 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         if (int.Parse(dt.Rows[i]["UomEntry"].ToString()) != -1)
                         {
                             isOtherUOM = true;
-                            unit = await GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
+                            unit = await GetUOMUnit(dt.Rows[i]["itemcode"].ToString(), dt.Rows[i]["UomCode"].ToString());
                             if (unit == null) throw new Exception("UOM Unit is null.");
                         }
-
-                        //if (int.Parse(dt.Rows[i]["UomEntry"].ToString()) == -1)
-                        //    oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
-                        //else
-                        //{
-                        //    isOtherUOM = true;
-                        //    unit = await GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
-                        //    if (unit == null) throw new Exception("UOM Unit is null.");
-
-                        //    oDoc.Lines.Quantity = ConvertUOMQuantity(double.Parse(dt.Rows[i]["quantity"].ToString()));
-                        //}
 
                         oDoc.Lines.WarehouseCode = dt.Rows[i]["whscode"].ToString();
 
@@ -199,19 +188,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     var batchNum = dr[x]["batchnumber"].ToString();
                                     oDoc.Lines.BatchNumbers.BatchNumber = batchNum;
 
-                                    // added by KX
-                                    // 20210412
-                                    //var numberinbuy = GetNumInBuy(itemcode);
-                                    //if (numberinbuy > 0)
-                                    //{
-                                    //    oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString()) * numberinbuy; // * numberinsale;//qty * numinbuy;
-                                    //}
-                                    //else
-                                    //{
-                                    //    oDoc.Lines.BatchNumbers.Quantity = double.Parse(decimal.Parse(dr[x]["quantity"].ToString()).ToString());
-                                    //}
-
-                                    //oDoc.Lines.BatchNumbers.Quantity = 480;
                                     if (!isOtherUOM)
                                         oDoc.Lines.BatchNumbers.Quantity = double.Parse(dr[x]["quantity"].ToString());
                                     else
@@ -359,16 +335,19 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
         }
 
 
-        static async Task<UOMConvert> GetUOMUnit(string FromUomCode)
+        static async Task<UOMConvert> GetUOMUnit(string itemcode, string FromUomCode)
         {
             try
             {
                 var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
 
-                return conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                //string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
+                //               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
+                //               $"WHERE T0.UomCode = @UomCode";
+                return conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode }).FirstOrDefault();
+
+                //return conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
             }
             catch (Exception e)
             {
@@ -380,22 +359,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
         static double ConvertUOMQuantity(double qty)
         {
             return qty / unit.FromUnit * unit.ToUnit;
-        }
-
-
-        // added by KX
-        // 20210412
-        static double GetNumInBuy (string ItemCode)
-        {
-            Erp_DBConnStr = Program._DbErpConnStr;
-            var parameter = new {ItemCode};
-
-            string query = "Select NumInBuy from OITM where ItemCode = @ItemCode";
-            // sql to query the OITM table to get the num in sale
-            using (var conn = new SqlConnection(Erp_DBConnStr))
-            {
-                return conn.QuerySingle<double>(query, parameter);
-            }
         }
     }
 }

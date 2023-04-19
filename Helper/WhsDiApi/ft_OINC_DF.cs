@@ -111,7 +111,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                                         batch.Quantity = double.Parse(dr[x]["Quantity"].ToString());
                                     else
                                     {
-                                        batch.Quantity = ConvertToInventoryUOM(dt.Rows[i]["UomCode"].ToString(), double.Parse(dr[x]["Quantity"].ToString()));
+                                        batch.Quantity = ConvertToInventoryUOM(dt.Rows[i]["ItemCode"].ToString(), dt.Rows[i]["UomCode"].ToString(), double.Parse(dr[x]["Quantity"].ToString()));
                                     }
                                 }
                                 else if (dr[x]["serialnumber"].ToString() != "")
@@ -172,16 +172,20 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                 Log(e.ToString());
             }
         }
-        static double ConvertToInventoryUOM(string FromUomCode, double qty)
+        static double ConvertToInventoryUOM(string itemcode, string FromUomCode, double qty)
         {
             try
             {
                 var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
 
-                var convertUnit = conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
+
+                var convertUnit = conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode }).FirstOrDefault();
+                //string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
+                //               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
+                //               $"WHERE T0.UomCode = @UomCode";
+
+                //var convertUnit = conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
 
                 var covertedQty = qty / convertUnit.FromUnit * convertUnit.ToUnit;
 

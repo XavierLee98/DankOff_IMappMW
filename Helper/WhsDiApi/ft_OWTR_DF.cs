@@ -159,6 +159,9 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         if (!string.IsNullOrEmpty(dt.Rows[i]["JrnlMemo"].ToString()))
                             oDoc.JournalMemo = dt.Rows[i]["JrnlMemo"].ToString();
 
+                        if (!string.IsNullOrEmpty(dt.Rows[i]["SlpCode"].ToString()))
+                            oDoc.SalesPersonCode = int.Parse(dt.Rows[i]["SlpCode"].ToString());
+
                         if (!string.IsNullOrEmpty(dt.Rows[i]["TransferOutUser"].ToString()))
                             oDoc.UserFields.Fields.Item("U_TransferOutUser").Value = dt.Rows[i]["TransferOutUser"].ToString();
 
@@ -182,7 +185,7 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
                         if (oDoc.Lines.UoMEntry != -1)
                         {
                             isOtherUOM = true;
-                            unit = GetUOMUnit(dt.Rows[i]["UomCode"].ToString());
+                            unit = GetUOMUnit(dt.Rows[i]["itemcode"].ToString(), dt.Rows[i]["UomCode"].ToString());
                             if (unit == null) throw new Exception("UOM Unit is null.");
                         }
                         oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
@@ -431,16 +434,14 @@ namespace IMAppSapMidware_NetCore.Helper.WhsDiApi
             }
         }
 
-        static UOMConvert GetUOMUnit(string FromUomCode)
+        static UOMConvert GetUOMUnit(string itemcode, string FromUomCode)
         {
             try
             {
                 var conn = new System.Data.SqlClient.SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomCode = @UomCode";
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, @uomcode, null)";
 
-                return conn.Query<UOMConvert>(query, new { UomCode = FromUomCode }).FirstOrDefault();
+                return conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomcode = FromUomCode}).FirstOrDefault();
             }
             catch (Exception e)
             {

@@ -64,11 +64,8 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                     DateTime docdate = DateTime.Parse(dt.Rows[0]["docdate"].ToString());
                     string key = dt.Rows[0]["key"].ToString();
 
-                    // added by jonny to track error when unexpected error
-                    // 20210411
                     currentKey = key;
                     currentStatus = failed_status;
-
 
                     //SAPbobsCOM.Recordset rc = (SAPbobsCOM.Recordset)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
                     SAPbobsCOM.Documents oDoc = null;// (SAPbobsCOM.Documents)sap.oCom.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oInventoryGenExit);
@@ -124,10 +121,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         if (dt.Rows[i]["jrnlmemo"].ToString() != "")
                             oDoc.JournalMemo = dt.Rows[i]["jrnlmemo"].ToString();
 
-                        //var GIReasonCode = dt.Rows[i]["GIReasonCode"].ToString();
-                        //if (!string.IsNullOrWhiteSpace(GIReasonCode))
-                        //    oDoc.UserFields.Fields.Item("U_GIReason").Value = GIReasonCode;
-
                         //if (dt.Rows[i]["numatcard"].ToString() != "")
                         //    oDoc.NumAtCard = dt.Rows[i]["numatcard"].ToString();
 
@@ -177,31 +170,16 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                         oDoc.Lines.Quantity = double.Parse(dt.Rows[i]["quantity"].ToString());
                         oDoc.Lines.WarehouseCode = dt.Rows[i]["whscode"].ToString();
 
-                        // add in the pur in remark 
-                        // 20210403
                         var itemDetails = dt.Rows[i]["remarks"].ToString();
                         if (!string.IsNullOrWhiteSpace(itemDetails))
                         {
                             oDoc.Lines.ItemDetails = itemDetails;
                         }
 
-                        //// put into the reason code
-                        //var reasonCode = dt.Rows[i]["ReasonCode"].ToString();
-                        //if (!string.IsNullOrWhiteSpace(reasonCode))
-                        //{
-                        //    oDoc.Lines.UserFields.Fields.Item("U_RejectReason").Value = reasonCode;
-                        //}
+                        DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'" +
+                                         " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
 
-                        // 20210410
-                        // update the account code
-                        //var acctCode = dt.Rows[i]["AcctCode"].ToString();
-                        //if (!string.IsNullOrWhiteSpace(acctCode))
-                        //{
-                        //    oDoc.Lines.AccountCode = acctCode;
-                        //}
-
-                        //DataTable dtBinBatchSerial = ft_General.LoadBinBatchSerial(dt.Rows[i]["key"].ToString(), dt.Rows[i]["itemcode"].ToString());
-                        DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
+                        //DataRow[] dr = dtDetails.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
                         if (dr.Length > 0)
                         {
                             for (int x = 0; x < dr.Length; x++)
@@ -212,7 +190,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     //oDoc.Lines.BatchNumbers.SetCurrentLine(batch_cnt);
                                     oDoc.Lines.BatchNumbers.BatchNumber = dr[x]["batchnumber"].ToString();
 
-                                    convertedQuantity = ConvertToInventoryUOM(UomEntry, double.Parse(dr[x]["quantity"].ToString()));
+                                    convertedQuantity = ConvertToInventoryUOM(dt.Rows[i]["itemcode"].ToString(), UomEntry, double.Parse(dr[x]["quantity"].ToString()));
                                     if (convertedQuantity < 0) throw new Exception(LastSAPMsg);
 
                                     oDoc.Lines.BatchNumbers.Quantity = convertedQuantity;
@@ -222,8 +200,13 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     if (dr[x]["admissiondate"].ToString() != "")
                                         oDoc.Lines.BatchNumbers.AddmisionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
 
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
-                                        "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "'");
+                                    //DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
+                                    //    "' and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "'");
+
+                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'" +
+                                        " and Batchnumber ='" + dr[x]["batchnumber"].ToString() + "'" +
+                                        " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
+
 
                                     if (drBin.Length > 0)
                                     {
@@ -233,7 +216,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                            // oDoc.Lines.BinAllocations.SetCurrentLine(batchbin_cnt);
                                             oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["binabsentry"].ToString());
 
-                                            convertedQuantity = ConvertToInventoryUOM(UomEntry, double.Parse(drBin[y]["quantity"].ToString()));
+                                            convertedQuantity = ConvertToInventoryUOM(dt.Rows[i]["itemcode"].ToString(), UomEntry, double.Parse(drBin[y]["quantity"].ToString()));
                                             if (convertedQuantity < 0) throw new Exception(LastSAPMsg);
 
                                             oDoc.Lines.BinAllocations.Quantity = convertedQuantity;
@@ -253,14 +236,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                     DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() +
                                         "' and serialnumber ='" + dr[x]["serialnumber"].ToString() + "'");
 
-                                    //if (dr[x]["admissiondate"].ToString() != "")
-                                    //    oDoc.Lines.SerialNumbers.ReceptionDate = DateTime.Parse(dr[x]["admissiondate"].ToString());
-                                    //if (dr[x]["expireddate"].ToString() != "")
-                                    //    oDoc.Lines.SerialNumbers.ExpiryDate = DateTime.Parse(dr[x]["expireddate"].ToString());
-                                    //if (dr[x]["manufacturingdate"].ToString() != "")
-                                    //    oDoc.Lines.SerialNumbers.ManufactureDate = DateTime.Parse(dr[x]["manufacturingdate"].ToString());
-
-
                                     if (drBin.Length > 0)
                                     {
                                         if (serial_cnt > 0) oDoc.Lines.BinAllocations.Add();
@@ -274,7 +249,8 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                 }
                                 else
                                 {
-                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'");
+                                    DataRow[] drBin = dtBin.Select("guid='" + dt.Rows[i]["key"].ToString() + "' and itemcode='" + dt.Rows[i]["itemcode"].ToString() + "'" +
+                                                                   " and lineguid='" + dt.Rows[i]["lineguid"].ToString() + "'");
 
                                     if (drBin.Length > 0)
                                     {
@@ -284,7 +260,7 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                                             oDoc.Lines.BinAllocations.SetCurrentLine(bin_cnt);
                                             oDoc.Lines.BinAllocations.BinAbsEntry = int.Parse(drBin[y]["binabsentry"].ToString());
 
-                                            convertedQuantity = ConvertToInventoryUOM(UomEntry, double.Parse(drBin[y]["quantity"].ToString()));
+                                            convertedQuantity = ConvertToInventoryUOM(dt.Rows[i]["itemcode"].ToString(), UomEntry, double.Parse(drBin[y]["quantity"].ToString()));
                                             if (convertedQuantity < 0) throw new Exception(LastSAPMsg);
                                             oDoc.Lines.BinAllocations.Quantity = convertedQuantity;
                                             bin_cnt++;
@@ -334,8 +310,6 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
                 Log($"{ ex.Message } \n");
                 ft_General.UpdateError("OIGE", ex.Message);
 
-                // added by jonny to track error when unexpected error
-                // 20210411
                 Log($"{currentKey }\n {currentStatus }\n { ex.Message } \n");
                 ft_General.UpdateStatus(currentKey, currentStatus, ex.Message, CurrentDocNum);
             }
@@ -348,16 +322,20 @@ namespace IMAppSapMidware_NetCore.Helper.SQL
             }
         }
 
-        static double ConvertToInventoryUOM(int FromUomEntry, double qty)
+        static double ConvertToInventoryUOM(string itemcode ,int FromUomEntry, double qty)
         {
             try
             {
                 var conn = new SqlConnection(Program._DbErpConnStr);
-                string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
-                               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
-                               $"WHERE T0.UomEntry = @UomEntry";
+                string query = $"SELECT * FROM IMAPP_Item_ConvertToInventoryUOM (@itemcode, null, @uomentry)";
 
-                var convertUnit = conn.Query<UOMConvert>(query, new { UomEntry = FromUomEntry }).FirstOrDefault();
+                //string query = $"SELECT T1.AltQty [FromUnit], T1.BaseQty [ToUnit] FROM OUOM T0 " +
+                //               $"INNER JOIN UGP1 T1 on T1.UomEntry = T0.UomEntry " +
+                //               $"WHERE T0.UomEntry = @UomEntry";
+
+                var convertUnit = conn.Query<UOMConvert>(query, new { itemcode = itemcode, uomentry = FromUomEntry }).FirstOrDefault();
+
+                //var convertUnit = conn.Query<UOMConvert>(query, new { UomEntry = FromUomEntry }).FirstOrDefault();
 
                 var covertedQty = qty / convertUnit.FromUnit * convertUnit.ToUnit;
 
